@@ -428,7 +428,8 @@ public class MathTokenizer extends Tokenizer {
                 }
                 if (store && !MathMLConf.ignoreNode(name)) {
                     addFormula(position, new Formula(n, rank, originalRank));
-                    loadUnifiedNodes(n, rank, originalRank, position);
+                    // FIXME: structural unification disabled
+                    //loadUnifiedNodes(n, rank, originalRank, position);
                 }
             }
         }
