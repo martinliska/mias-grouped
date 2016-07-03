@@ -650,14 +650,16 @@ public class MathTokenizer extends Tokenizer {
                     hasElement = false;
                 }
                 if (hasElement) {
-                    for (boolean keepAlphaEquivalence : trueFalseCollection) {
+                    // FIXME: Variable unification only not keeping ɑ-equivalence
+                    //for (boolean keepAlphaEquivalence : trueFalseCollection) {
+                        boolean keepAlphaEquivalence = false;
                         Map<String, String> changes = new HashMap<>();
                         Node newNode = node.cloneNode(true);
                         boolean changed = unifyVariablesNode(newNode, changes, keepAlphaEquivalence);
                         if (changed) {
                             result.add(new Formula(newNode, f.getWeight() * (keepAlphaEquivalence ? rank : vCoefGen * rank), f.getOriginalFormulaWeight()));
                         }
-                    }
+                    //}
                 }
             }
             addAllFormulea(forms, result);
