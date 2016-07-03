@@ -122,9 +122,11 @@ public class ProcessServlet extends HttpServlet {
                 ByteArrayOutputStream canonOut = new ByteArrayOutputStream();
                 MathMLCanonicalizer canonicalizer = MathMLCanonicalizer.getDefaultCanonicalizer();
                 canonicalizer.canonicalize(new ByteArrayInputStream(("<html>" + query + "</html>").getBytes("UTF-8")), canonOut);
-                ByteArrayOutputStream unificationOut = new ByteArrayOutputStream();
-                MathMLUnificator.unifyMathML(new ByteArrayInputStream(canonOut.toByteArray()), unificationOut, false);
-                convertedQuery = unificationOut.toString("UTF-8");
+                // FIXME: structural unification disabled
+                //ByteArrayOutputStream unificationOut = new ByteArrayOutputStream();
+                //MathMLUnificator.unifyMathML(new ByteArrayInputStream(canonOut.toByteArray()), unificationOut, false);
+                //convertedQuery = unificationOut.toString("UTF-8");
+                convertedQuery = canonOut.toString("UTF-8");
                 convertedQuery = convertedQuery.substring(convertedQuery.indexOf("<html>") + 6, convertedQuery.indexOf("</html>"));
                 request.setAttribute("convertedCanonQuery", convertedQuery);
             } catch (XMLStreamException | ModuleException | JDOMException ex) {
