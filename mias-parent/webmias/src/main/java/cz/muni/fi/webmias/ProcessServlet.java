@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.stream.XMLStreamException;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.lucene.search.IndexSearcher;
 import org.jdom2.JDOMException;
@@ -118,18 +119,20 @@ public class ProcessServlet extends HttpServlet {
                 query += " " + TeXConverter.convertTexLatexML(sep[0]);
             }
             String convertedQuery = query;
-            try {
+            // FIXME: canonicalization disabled
+            //try {
                 ByteArrayOutputStream canonOut = new ByteArrayOutputStream();
-                MathMLCanonicalizer canonicalizer = MathMLCanonicalizer.getDefaultCanonicalizer();
-                canonicalizer.canonicalize(new ByteArrayInputStream(("<html>" + query + "</html>").getBytes("UTF-8")), canonOut);
+                //MathMLCanonicalizer canonicalizer = MathMLCanonicalizer.getDefaultCanonicalizer();
+                //canonicalizer.canonicalize(new ByteArrayInputStream(("<html>" + query + "</html>").getBytes("UTF-8")), canonOut);
+                IOUtils.copy(new ByteArrayInputStream(("<html>" + query + "</html>").getBytes("UTF-8")), canonOut);
                 ByteArrayOutputStream unificationOut = new ByteArrayOutputStream();
                 MathMLUnificator.unifyMathML(new ByteArrayInputStream(canonOut.toByteArray()), unificationOut, false);
                 convertedQuery = unificationOut.toString("UTF-8");
                 convertedQuery = convertedQuery.substring(convertedQuery.indexOf("<html>") + 6, convertedQuery.indexOf("</html>"));
                 request.setAttribute("convertedCanonQuery", convertedQuery);
-            } catch (XMLStreamException | ModuleException | JDOMException ex) {
-                Logger.getLogger(ProcessServlet.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            //} catch (XMLStreamException | ModuleException | JDOMException ex) {
+            //    Logger.getLogger(ProcessServlet.class.getName()).log(Level.SEVERE, null, ex);
+            //}
 
             s = new Searching(searcher, currentIndexDef.getStorage());
             page = page == 0 ? page : page - 1;
