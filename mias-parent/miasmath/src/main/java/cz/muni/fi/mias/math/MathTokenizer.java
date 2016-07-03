@@ -625,7 +625,8 @@ public class MathTokenizer extends Tokenizer {
      * the rank of modified formula.
      */
     private void modify() {
-        unifyVariables(vCoef);
+        // FIXME: variable unification disabled
+        //unifyVariables(vCoef);
         unifyConst(cCoef);
         unifyOperators(oCoef);
         // FIXME: attributes boost disabled
