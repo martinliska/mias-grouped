@@ -68,7 +68,9 @@ public class MathTokenizer extends Tokenizer {
     // // ranking of documents if two or more formulae of different complexity is
     // // used in one query):
     // private static final FormulaValuator inputFormulaValuator = new ConstantFormulaValuator();
-    private static final FormulaValuator inputFormulaValuator = formulaComplexityValuator;
+    // FIXME: initial formula weight 1.0f
+    private static final FormulaValuator inputFormulaValuator = new ConstantFormulaValuator(1.0f);
+    //private static final FormulaValuator inputFormulaValuator = formulaComplexityValuator;
     private static final UnifiedFormulaValuator unifiedNodeValuator = new UnifiedFormulaValuator();
     private static final Map<String, List<String>> ops = MathMLConf.getOperators();
     private static final Map<String, String> eldict = MathMLConf.getElementDictionary();
