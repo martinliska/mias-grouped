@@ -43,10 +43,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import cz.muni.fi.mir.mathmlcanonicalization.MathMLCanonicalizer;
+import cz.muni.fi.mir.mathmlcanonicalization.Settings;
 import cz.muni.fi.mir.mathmlunificator.MathMLUnificator;
 import cz.muni.fi.mir.mathmlunificator.config.Constants;
 import cz.muni.fi.mir.mathmlunificator.utils.XMLOut;
 import java.util.Arrays;
+import org.jdom2.input.SAXBuilder;
 
 /**
  * Implementation of Lucene Tokenizer. Provides math formulae contained in the
@@ -79,7 +81,8 @@ public class MathTokenizer extends Tokenizer {
     private static final AtomicLong producedF = new AtomicLong(0);
 
     // utilities
-    private final MathMLCanonicalizer canonicalizer = MathMLCanonicalizer.getDefaultCanonicalizer();
+    // FIXME: canonicalization disabled
+    //private final MathMLCanonicalizer canonicalizer = MathMLCanonicalizer.getDefaultCanonicalizer();
     private final DOMOutputter outputter = new DOMOutputter();
 
     // configuration
@@ -305,7 +308,10 @@ public class MathTokenizer extends Tokenizer {
         Document doc;
 
         try {
-            org.jdom2.Document jdom2Doc = canonicalizer.canonicalize(new ReaderInputStream(input, "UTF-8"));
+            // FIXME: canonicalization disabled
+            //org.jdom2.Document jdom2Doc = canonicalizer.canonicalize(new ReaderInputStream(input, "UTF-8"));
+            final SAXBuilder builder = Settings.setupSAXBuilder();
+            org.jdom2.Document jdom2Doc = builder.build(input);
             doc = outputter.output(jdom2Doc);
         } catch (Exception e) {
             LOG.warn("Input could not be parsed (probably it is not valid MathML)", e);
