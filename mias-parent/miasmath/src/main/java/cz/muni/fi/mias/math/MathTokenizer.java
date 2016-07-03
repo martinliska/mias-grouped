@@ -626,7 +626,8 @@ public class MathTokenizer extends Tokenizer {
      */
     private void modify() {
         unifyVariables(vCoef);
-        unifyConst(cCoef);
+        // FIXME: constant unification disabled
+        //unifyConst(cCoef);
         unifyOperators(oCoef);
         // FIXME: attributes boost disabled
         //processAttributes(aCoef);
