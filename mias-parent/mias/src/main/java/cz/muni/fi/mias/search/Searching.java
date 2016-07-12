@@ -54,7 +54,9 @@ public class Searching {
     private String storagePath;
     private PayloadSimilarity ps = new PayloadSimilarity();
 //    private TitlesSuggester sug;
-    private int snippetsEnabledLimit = 100;
+    // FIXME: Disable web service snippets at all
+    //private int snippetsEnabledLimit = 100;
+    private int snippetsEnabledLimit = 0;
 
     /**
      * Constructs new Searching on the index from the Settings file.
