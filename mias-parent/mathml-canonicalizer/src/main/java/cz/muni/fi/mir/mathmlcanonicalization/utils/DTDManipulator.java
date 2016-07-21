@@ -18,16 +18,13 @@ package cz.muni.fi.mir.mathmlcanonicalization.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
-
 import org.custommonkey.xmlunit.DoctypeInputStream;
-
-import cz.muni.fi.mir.mathmlcanonicalization.Settings;
 
 /**
  * Utilities for manipulating DTD in XML documents.
@@ -38,8 +35,10 @@ public class DTDManipulator {
 
     /**
      * Inject into a XML document XHTML 1.1 plus MathML 2.0 plus SVG 1.1 DTD
-     * reference ({@code <!DOCTYPE math SYSTEM "xhtml-math11-f.dtd">}). Named
-     * MathML entities ({@code &alpha;} ...) can be used in such a XML document.
+     * reference 
+     * (<code>&lt;!DOCTYPE math SYSTEM "xhtml-math11-f.dtd"&gt;</code>). Named
+     * MathML entities 
+     * (<code>&amp;alpha;</code> ...) can be used in such a XML document.
      *
      * @param in XML document as InputStream
      * @return the XML document with injected XHTML 1.1 plus MathML 2.0 plus SVG
@@ -52,9 +51,10 @@ public class DTDManipulator {
     }
 
     /**
-     * Inject into a XML document MathML 2.0 DTD reference
-     * ({@code  <!DOCTYPE math SYSTEM "mathml2.dtd">}). Named MathML entities
-     * ({@code &alpha;} ...) can be used in such a XML document.
+     * Inject into a XML document MathML 2.0 DTD reference (
+     * <code>&lt;!DOCTYPE math SYSTEM "mathml2.dtd"&gt;</code>). Named MathML
+     * entities (
+     * <code>&amp;alpha;</code> ...) can be used in such a XML document.
      *
      * @param in XML document as InputStream
      * @return the XML document with injected MathML 2.0 DTD reference
@@ -66,9 +66,10 @@ public class DTDManipulator {
     }
 
     /**
-     * Inject into a XML document MathML 3.0 DTD reference
-     * ({@code <!DOCTYPE math SYSTEM "mathml3.dtd">}). Named MathML entities
-     * ({@code &alpha;} ...) can be used in such a XML document.
+     * Inject into a XML document MathML 3.0 DTD reference (
+     * <code>&lt;!DOCTYPE math SYSTEM "mathml3.dtd"&gt;</code>). Named MathML
+     * entities (<code>&amp;alpha;</code> ...) can be used in such a XML 
+     * document.
      *
      * @param in XML document as InputStream
      * @return the XML document with injected MathML 3.0 DTD reference
@@ -84,32 +85,23 @@ public class DTDManipulator {
      *
      * @param in XML document as InputStream
      * @return the XML document without DTD reference
-     * @throws javax.xml.stream.XMLStreamException an error with XML processing
-     * occurs
      */
     public static InputStream removeDTD(InputStream in) throws XMLStreamException {
-        byte[] buffer = removeDTDAndReturnOutputStream(in).toByteArray();
 
-        return new ByteArrayInputStream(buffer);
-
-    }
-
-    public static ByteArrayOutputStream removeDTDAndReturnOutputStream(InputStream in) throws XMLStreamException {
-
-        XMLEventReader reader = Settings.defaultXmlInputFactory().createXMLEventReader(in);
+        XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(in);
         ByteArrayOutputStream noDtdOutputStream = new ByteArrayOutputStream();
-        XMLEventWriter writer = Settings.xmlOutputFactory().createXMLEventWriter(noDtdOutputStream, "UTF-8");
+        XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(noDtdOutputStream, "UTF-8");
 
         while (reader.hasNext()) {
             XMLEvent event = (XMLEvent) reader.next();
 
-            if (event.getEventType() != XMLStreamConstants.DTD) {
+            if (event.getEventType() != event.DTD) {
                 writer.add(event);
             }
         }
         writer.flush();
 
-        return noDtdOutputStream;
-    }
+        return new ByteArrayInputStream(noDtdOutputStream.toByteArray());
 
+    }
 }

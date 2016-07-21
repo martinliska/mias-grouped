@@ -3,8 +3,6 @@ package cz.muni.fi.mias.search;
 import cz.muni.fi.mias.*;
 import cz.muni.fi.mias.math.MathSeparator;
 import cz.muni.fi.mias.math.MathTokenizer;
-import cz.muni.fi.mias.search.snippets.NiceSnippetExtractor;
-import cz.muni.fi.mias.search.snippets.SnippetExtractor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,14 +13,15 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
@@ -40,6 +39,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.payloads.AveragePayloadFunction;
 import org.apache.lucene.search.payloads.PayloadTermQuery;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 
 /**
  * Searching class responsible for searching over current index.
@@ -49,12 +49,11 @@ import org.apache.lucene.store.FSDirectory;
  * @since 14.5.2010
  */
 public class Searching {
-    private static final Logger LOG = LogManager.getLogger(Searching.class);
+
     private IndexSearcher indexSearcher;
     private String storagePath;
     private PayloadSimilarity ps = new PayloadSimilarity();
 //    private TitlesSuggester sug;
-    private int snippetsEnabledLimit = 100;
 
     /**
      * Constructs new Searching on the index from the Settings file.
@@ -66,8 +65,8 @@ public class Searching {
             this.indexSearcher.setSimilarity(ps);
             this.storagePath = "";
 //            sug = new TitlesSuggester(indexSearcher.getIndexReader());
-        } catch (IOException ex) {
-            LOG.error(ex);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -92,10 +91,12 @@ public class Searching {
      * @param is InputStream with query input.
      */
     public void search(InputStream is) {
-        try(BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));) {
+        BufferedReader br = null;
+        try {
             if (!(is instanceof FileInputStream)) {
-                LOG.info("\nEnter query: ");
+                System.out.println("\nEnter query: ");
             }
+            br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             String queryString = "";
             String line;
             while ((line = br.readLine()) != null) {
@@ -103,7 +104,13 @@ public class Searching {
             }
             search(queryString, true, 0, 100, false);
         } catch (IOException ex) {
-            LOG.fatal(ex);
+            Logger.getLogger(Searching.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                br.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Searching.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
@@ -126,23 +133,25 @@ public class Searching {
         SearchResult result = new SearchResult();
         result.setQuery(query);
         try {
-            long start = System.currentTimeMillis();
+            Date start = new Date();
             Query bq = parseInput(query, variant);
             TopDocs docs = indexSearcher.search(bq, Settings.getMaxResults());
 //            TopFieldDocs docs = indexSearcher.search(bq, null, Settings.getMaxResults(), Sort.RELEVANCE, true, false);
-            long end = System.currentTimeMillis();
-            result.setCoreSearchTime(end-start);
-            result.setResults(getResults(offset, limit, new ArrayList<>(Arrays.asList(docs.scoreDocs)), bq, debug));
+            Date end = new Date();
+            long time = end.getTime() - start.getTime();
+            result.setCoreSearchTime(time);
+            result.setResults(getResults(offset, limit, new ArrayList<ScoreDoc>(Arrays.asList(docs.scoreDocs)), bq, debug));
             result.setTotalResults(docs.totalHits);
             if (debug) {
                 result.setLuceneQuery(bq.toString());
             }
-            result.setTotalSearchTime(System.currentTimeMillis() - start);
+            end = new Date();
+            result.setTotalSearchTime(end.getTime() - start.getTime());
             if (print) {
                 printResults(result, bq, indexSearcher);
             }
         } catch (IOException ex) {
-            LOG.fatal(ex);
+            Logger.getLogger(Searching.class.getName()).log(Level.SEVERE, null, ex);
         }
         return result;
     }
@@ -171,12 +180,12 @@ public class Searching {
             result.add(bq, BooleanClause.Occur.MUST);
         }
         if (sep[0].length() > 0) {
-            QueryParser parser = new MultiFieldQueryParser(new String[]{"content", "title"}, new StandardAnalyzer());
+            QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_45, new String[]{"content", "title"}, new StandardAnalyzer(Version.LUCENE_45));
             try {
                 Query query = parser.parse(sep[0]);
                 result.add(query, BooleanClause.Occur.MUST);
             } catch (ParseException pe) {
-                LOG.error(pe.getMessage());
+                System.out.println(pe.getMessage());
             }
         }
         return result;
@@ -184,11 +193,6 @@ public class Searching {
 
     private void addMathQueries(String mathQuery, BooleanQuery bq, MathTokenizer.MathMLType variant) {
         MathTokenizer mt = new MathTokenizer(new StringReader(mathQuery), false, variant);
-        try {
-            mt.reset();
-        } catch (IOException ex) {
-            LOG.fatal(ex);
-        }
         Map<String, Float> queryForms = mt.getQueryFormulae();
         List<Query> cQueries = getMathQueries(queryForms, variant);
         for (Query q : cQueries) {
@@ -198,7 +202,7 @@ public class Searching {
 
     private List<Query> getMathQueries(Map<String, Float> queryForms, MathTokenizer.MathMLType type) {
         String field = (type == MathTokenizer.MathMLType.PRESENTATION ? "p" : "c") + "math";
-        List<Query> result = new ArrayList<>();
+        List<Query> result = new ArrayList<Query>();
         Iterator<Map.Entry<String, Float>> it = queryForms.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, Float> entry = it.next();
@@ -223,16 +227,15 @@ public class Searching {
      * @throws IOException
      */
     private List<Result> getResults(int offset, int limit, List<ScoreDoc> docs, Query query, boolean debug) throws IOException {
-        List<Result> results = new ArrayList<>();
+        List<Result> results = new ArrayList<Result>();
         List<ScoreDoc> temp = docs.subList(offset, Math.min(offset + limit, docs.size()));
 
-        int snippetCounter = 0;
         for (ScoreDoc sd : temp) {
-            snippetCounter++;
-
             Document document = indexSearcher.doc(sd.doc);
             String fullLocalPath = document.get("path");
             String dataPath = storagePath + fullLocalPath;
+
+            InputStream snippetIs = getInputStreamFromDataPath(document);
 
             String title = document.get("title");
             String info = "score = " + sd.score;
@@ -244,23 +247,29 @@ public class Searching {
             if (id != null && !Character.isDigit(id.charAt(0))) {
                 id = "http://arxiv.org/abs/" + id.replace(".", "/");
             } else {
-                id = document.get("id");
+                String ntcir10Id = null;
+                
+                InputStream idIs = getInputStreamFromDataPath(document);
+                if (idIs != null) {
+                    ntcir10Id = new NTCIR10CollectionDocumentIdExtractor(idIs).getId();
+                    idIs.close();
+                }
+                if (ntcir10Id != null) {
+                    id = ntcir10Id;
+                } else {
+                    id = document.get("id");
+                }
             }
 
-            String snippet = "Snippets disabled";
-            if (snippetCounter <= snippetsEnabledLimit) {
-                InputStream snippetIs = getInputStreamFromDataPath(document);
-                if (snippetIs != null) {
-                    SnippetExtractor extractor = new NiceSnippetExtractor(snippetIs, query, sd.doc, indexSearcher.getIndexReader());
-                    snippet = extractor.getSnippet();
-                } else {
-                    LOG.info("Stream is null for snippet extraction {}",dataPath);
-                }
-                if (snippetIs != null) {
-                    snippetIs.close();
-                }
+            String snippet = "";
+            if (snippetIs != null) {
+                SnippetExtractor extractor = new NiceSnippetExtractor(snippetIs, query, sd.doc, indexSearcher.getIndexReader());
+                snippet = extractor.getSnippet();
             } else {
-                snippet = "Snippets disabled for result positions above " + snippetsEnabledLimit;
+                System.out.println("Stream is null for snippet extraction " + dataPath);
+            }
+            if (snippetIs != null) {
+                snippetIs.close();
             }
             results.add(new Result(title, fullLocalPath, info, id, snippet));
         }
@@ -278,14 +287,14 @@ public class Searching {
      */
     private void printResults(SearchResult searchResult, Query query, IndexSearcher searcher)
             throws IOException, CorruptIndexException {
-        LOG.info("Searching for: {}",query);
-        LOG.info("Time: {} ms", searchResult.getCoreSearchTime());
+        System.out.println("Searching for: " + query.toString());
+        System.out.println("Time: " + searchResult.getCoreSearchTime() + "ms");
         int totalResults = searchResult.getTotalResults();
-        LOG.info("Total hits: {}",totalResults);
+        System.out.println("\nTotal hits: " + totalResults);
         if (totalResults == 0) {
-            LOG.warn("-------------");
-            LOG.warn("Nothing found");
-            LOG.warn("-------------");
+            System.out.println("-------------");
+            System.out.println("Nothing found");
+            System.out.println("-------------");
         } else {
             BufferedReader is = new BufferedReader(new InputStreamReader(System.in));
             int hitsPP = 30;
@@ -300,21 +309,21 @@ public class Searching {
                     String title = result.getTitle();
                     if (title != null) {
                         if (title.length() > 60) {
-                            LOG.info("{} ...",title.substring(0, 60));
+                            System.out.println(title.substring(0, 60) + " ...");
                         } else {
-                            LOG.info(title);
+                            System.out.println(title);
                         }
                     }
-                    LOG.info("id: {}",result.getId());
-                    LOG.info("Path: {}",result.getPath());
-                    LOG.info("Snippet: {}",result.getSnippet());
-                    LOG.info("----------------------------------------------------");
+                    System.out.println("id: " + result.getId());
+                    System.out.println(result.getPath());
+                    System.out.println(result.getSnippet());
+                    System.out.println("----------------------------------------------------");
                 }
-                LOG.info("Showing results {}-{}",start+1,end);
+                System.out.println("Showing results " + (start + 1) + "-" + end);
                 if (end == searchResult.getResults().size()) {
                     break;
                 }
-                LOG.info("Show next page?(y/n)");
+                System.out.println("Show next page?(y/n)");
                 String s = is.readLine();
                 if (s == null || s.length() == 0 || s.charAt(0) == 'n') {
                     quit = true;
@@ -327,6 +336,7 @@ public class Searching {
     private InputStream getInputStreamFromDataPath(Document document) {
 
         InputStream is = null;
+
         try {
             String fullLocalPath = document.get("path");
             String dataPath = storagePath + fullLocalPath;
@@ -356,9 +366,10 @@ public class Searching {
             }
 
         } catch (FileNotFoundException ex) {
-            LOG.fatal(ex);
+            Logger.getLogger(Searching.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             return is;
         }
+
     }
 }

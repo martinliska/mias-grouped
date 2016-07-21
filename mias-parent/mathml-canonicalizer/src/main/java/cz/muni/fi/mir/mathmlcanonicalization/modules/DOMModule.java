@@ -31,5 +31,4 @@ public interface DOMModule extends Module {
      * @throws ModuleException when cannot transform the input by this module
      */
     public void execute(Document doc) throws ModuleException;
-
 }

@@ -10,6 +10,7 @@ import cz.muni.fi.mias.indexing.doc.ZipEntryDocument;
 import cz.muni.fi.mias.math.Formula;
 import cz.muni.fi.mias.math.MathMLConf;
 import cz.muni.fi.mias.math.MathTokenizer;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,12 +19,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -36,8 +40,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -50,13 +52,13 @@ import org.xml.sax.SAXException;
  * @author Martin Liska
  */
 public class InDocProcessing {
-    private static final Logger LOG = LogManager.getLogger(InDocProcessing.class);
+
     private long progress = 0;
     private long count = 0;
     private File inPath;
     private String outDir;
     private char dirSep = System.getProperty("file.separator").charAt(0);
-    private long start;
+    private Date start;
 
     /**
      * 
@@ -75,24 +77,23 @@ public class InDocProcessing {
      */
     public void process() {
         try {
-            start = System.currentTimeMillis();
+            start = new Date();
             List<File> docs = getDocs(inPath);
             count = docs.size();
             processDocsThreaded(docs);
         } catch (IOException ex) {
-            LOG.fatal(ex);
+            Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private List<File> getDocs(File file) throws IOException {
-        List<File> result = new ArrayList<>();
+        List<File> result = new ArrayList<File>();
         if (file.canRead()) {
             if (file.isDirectory()) {
                 File[] files = file.listFiles();
                 if (files != null) {
-                    for (File file1 : files)
-                    {
-                        result.addAll(getDocs(file1));
+                    for (int i = 0; i < files.length; i++) {
+                        result.addAll(getDocs(files[i]));
                     }
                 }
             } else {
@@ -132,8 +133,8 @@ public class InDocProcessing {
         }
 
         private void processDoc(File file) {
-            LOG.info("Processing {}",file);
-            LOG.info("Progress: {} of {} done...",++progress,count);
+            System.out.println("Processing " + file);
+            System.out.println("Progress: " + (++progress) + " of " + count + " done...");
             if (progress % 10000 == 0) {
                 printTimes();
             }
@@ -141,16 +142,17 @@ public class InDocProcessing {
             String ext = path.substring(path.lastIndexOf(".") + 1);
 
             if (ext.equals("zip")) {
-                try(ZipFile zipFile = new ZipFile(file)) {
-                    Enumeration<? extends ZipEntry> e = zipFile.entries();
+                try {
+                    ZipFile zipFile = new ZipFile(file);
+                    Enumeration e = zipFile.entries();
                     while (e.hasMoreElements()) {
-                        ZipEntry entry = e.nextElement();
+                        ZipEntry entry = (ZipEntry) e.nextElement();
                         insertMathToXML(new ZipEntryDocument(zipFile, path, entry));
                     }
                 } catch (ZipException ex) {
-                    LOG.fatal(ex);
+                    Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {
-                    LOG.fatal(ex);
+                    Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
                 insertMathToXML(new FileDocument(file, path));
@@ -158,8 +160,11 @@ public class InDocProcessing {
         }
 
         private void insertMathToXML(DocumentSource source) {
-            try(InputStreamReader isr1 = new InputStreamReader(source.resetStream(), "UTF-8");
-                    InputStreamReader isr2 = new InputStreamReader(source.resetStream(), "UTF-8")) {
+            InputStreamReader isr1 = null;
+            InputStreamReader isr2 = null;
+            try {
+                isr1 = new InputStreamReader(source.resetStream(), "UTF-8");
+                isr2 = new InputStreamReader(source.resetStream(), "UTF-8");
                 MathTokenizer mt = new MathTokenizer(isr1, true, MathTokenizer.MathMLType.BOTH);
                 Map<Integer, List<Formula>> forms = mt.getFormulae();
                 DocumentBuilder builder = MIaSUtils.prepareDocumentBuilder();
@@ -182,13 +187,22 @@ public class InDocProcessing {
                     maths.item(i).appendChild(el);
                 }
                 writeToFile(document, resolveNewPath(file));
-            } catch (SAXException | ParserConfigurationException ex) {
-                LOG.fatal(ex);
+            } catch (SAXException ex) {
+                Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ParserConfigurationException ex) {
+                Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
             } catch (UnsupportedEncodingException ex) {
-                LOG.fatal(ex);
+                Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
-                LOG.fatal(ex);
-            } 
+                Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                try {
+                    isr1.close();
+                    isr2.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
 
         private void writeToFile(Document document, String path) {
@@ -198,6 +212,7 @@ public class InDocProcessing {
                 outFile.getParentFile().mkdirs();
                 OutputStream out = null;
                 if (ext.equals("zip")) {
+                    BufferedInputStream origin = null;
                     FileOutputStream dest = new FileOutputStream(path);
                     out = new ZipOutputStream(new BufferedOutputStream(dest));
                     String entryName = path.substring(path.lastIndexOf(dirSep));
@@ -219,16 +234,19 @@ public class InDocProcessing {
                 StreamResult result = new StreamResult(out);
                 transformer.transform(source, result);
                 out.close();
-            } catch (IOException | TransformerException ex) {
-                LOG.fatal(ex);
+            } catch (IOException ex) {
+                Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (TransformerException ex) {
+                Logger.getLogger(InDocProcessing.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
 
     private void printTimes() {
-        LOG.info("---------------------------------");
-        LOG.info(Settings.EMPTY_STRING);
-        LOG.info("{} DONE in {} ms",progress,System.currentTimeMillis() - start);
-        LOG.info(Settings.EMPTY_STRING);
+        Date intermediate = new Date();
+        System.out.println("---------------------------------");
+        System.out.println();
+        System.out.println(progress + " DONE in " + (intermediate.getTime() - start.getTime()) + " ms");
+        System.out.println();
     }
 }

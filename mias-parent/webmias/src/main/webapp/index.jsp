@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
 <%@page contentType="application/xhtml+xml;charset=UTF-8" pageEncoding="UTF-8"%>
-<%@  page 
-import="cz.muni.fi.webmias.Indexes"
-%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:svg="http://www.w3.org/2000/svg">
@@ -12,9 +9,9 @@ import="cz.muni.fi.webmias.Indexes"
         <title>Web Math Indexer and Searcher</title>
         <link type="text/css" rel="stylesheet" href="https://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
         <link type="text/css" rel="stylesheet" href="style.css" />
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"/>
-        <script type="text/javascript" src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"/>
-        <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" />
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.9.1.js"/>
+        <script type="text/javascript" src="https://code.jquery.com/ui/1.10.3/jquery-ui.js"/>
+        <script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" />
         <script type="text/javascript" src="webmias.js"/>
     </head> 
     <body>
@@ -31,7 +28,7 @@ import="cz.muni.fi.webmias.Indexes"
                    </c:url>">
                 </a>
 
-                <form action="${pageContext.request.contextPath}/ps" method="post"
+                <form action="${pageContext.request.contextPath}/ps" method="get"
                       onsubmit="buildQuery();
                               return checkForm(this)">
                     <div class="query-clauses">
@@ -71,7 +68,7 @@ import="cz.muni.fi.webmias.Indexes"
                             <div class="search-option">
                                 Search in:
                                 <select name="index">
-                                    <c:forEach items="<%= Indexes.getIndexNames() %>" var="indexDef" varStatus="status">
+                                    <c:forEach items="${indexes}" var="indexDef" varStatus="status">
                                         <option value="${status.index}" <c:if test="${index==status.index}">selected="selected"</c:if>>${indexDef}</option>
                                     </c:forEach>
                                 </select>

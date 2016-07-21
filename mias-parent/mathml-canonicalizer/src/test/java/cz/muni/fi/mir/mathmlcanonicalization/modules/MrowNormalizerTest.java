@@ -15,7 +15,6 @@
  */
 package cz.muni.fi.mir.mathmlcanonicalization.modules;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -32,34 +31,6 @@ public class MrowNormalizerTest extends AbstractModuleTest {
     public MrowNormalizerTest() {
         CONFIGURED_INSTANCE.setProperty("open", "left");
         CONFIGURED_INSTANCE.setProperty("close", "right");
-        CONFIGURED_INSTANCE.setProperty("wrapInside", "1");
-        CONFIGURED_INSTANCE.setProperty("wrapOutside", "1");
-    }
-
-    @BeforeClass
-    public static void setUpBeforeClass() {
-        DEFAULT_INSTANCE.setProperty("wrapOutside", "1");
-        DEFAULT_INSTANCE.setProperty("wrapInside", "1");
-        DEFAULT_INSTANCE.setProperty("open", "( [ {");
-        DEFAULT_INSTANCE.setProperty("close", ") ] }");
-        DEFAULT_INSTANCE.setProperty("childCount.msqrt", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.mfrac", "2");
-        DEFAULT_INSTANCE.setProperty("childCount.mroot", "2");
-        DEFAULT_INSTANCE.setProperty("childCount.mstyle", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.merror", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.mpadded", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.mphantom", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.mfenced", "0");
-        DEFAULT_INSTANCE.setProperty("childCount.menclose", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.msub", "2");
-        DEFAULT_INSTANCE.setProperty("childCount.msup", "2");
-        DEFAULT_INSTANCE.setProperty("childCount.msubsup", "3");
-        DEFAULT_INSTANCE.setProperty("childCount.munder", "2");
-        DEFAULT_INSTANCE.setProperty("childCount.munderover", "3");
-        DEFAULT_INSTANCE.setProperty("childCount.mtd", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.mscarry", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.math", "1");
-        DEFAULT_INSTANCE.setProperty("childCount.mrow", "1");
     }
 
     @Test
@@ -131,5 +102,4 @@ public class MrowNormalizerTest extends AbstractModuleTest {
     public void testConfigured() {
         testXML(CONFIGURED_INSTANCE, RESOURCE_SUBDIR + "configured");
     }
-
 }

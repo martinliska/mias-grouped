@@ -15,7 +15,6 @@
  */
 package cz.muni.fi.mir.mathmlcanonicalization.modules;
 
-import static cz.muni.fi.mir.mathmlcanonicalization.modules.AbstractModule.MATHMLNS;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,23 +28,21 @@ import org.jdom2.filter.ElementFilter;
 /**
  * Handle sub/super/under/over/multi script elements in MathML.
  *
- * <p>
- * Normalize the occurence of {@code <msub>}, {@code <msup>}, {@code <msubsup>},
- * {@code <munder>}, {@code <mover>}, {@code <munderover>} and
- * {@code <mmultiscripts>} (with children {@code <mprescripts/>} and
- * {@code <none/>}) elements in MathML.
- * </p><span class="simpleTagLabel">Input</span>
+ * <p>Normalize the occurence of &lt;msub&gt;, &lt;msup&gt;, &lt;msubsup&gt;,
+ * &lt;munder&gt;, &lt;mover&gt;, &lt;munderover&gt; and &lt;mmultiscripts&gt;
+ * (with children &lt;mprescripts/&gt; and &lt;none/&gt;) elements in MathML.
+ * </p><h4>Input</h4>
  * Well-formed MathML
- * <div class="simpleTagLabel">Output</div>
+ * <h4>Output</h4>
  * The original code with always used:<ul>
- * <li>{@code <msubsup>} (or {@code <msub>}) for sums, integrals, etc.
- * (converted from {@code <munderover>}, {@code <munder>} and
- * {@code <msub>}, {@code <msup>} combinations)</li>
- * <li>{@code <msub>} inside {@code <msup>} in nested formulae</li>
- * <li>nested {@code <msub>} and {@code <msup>} instead of {@code <msubsup>} in
+ * <li>&lt;msubsup&gt; (or &lt;msub&gt;) for sums, integrals, etc. (converted
+ * from &lt;munderover&gt;, &lt;munder&gt; and &lt;msub&gt;, &lt;msup&gt;
+ * combinations)</li>
+ * <li>&lt;msub&gt; inside &lt;msup&gt; in nested formulae</li>
+ * <li>nested &lt;msub&gt; and &lt;msup&gt; instead of &lt;msubsup&gt; in
  * identifiers (not for sums, integrals, etc.)</li>
  * <li>Unicode scripts converted to MathML scripts</li>
- * <li>(sub/super)scripts instead of {@code <mmultiscript>} where possible</li>
+ * <li>(sub/super)scripts instead of &lt;mmultiscript&gt; where possible</li>
  * <li>maybe conversion all (under/over)scripts to (sub/super) scripts?</li>
  * </ul>
  *
@@ -54,6 +51,10 @@ import org.jdom2.filter.ElementFilter;
  */
 public class ScriptNormalizer extends AbstractModule implements DOMModule {
 
+    /**
+     * Path to the property file with module settings.
+     */
+    private static final String PROPERTIES_FILENAME = "ScriptNormalizer.properties";
     private static final Logger LOGGER = Logger.getLogger(ScriptNormalizer.class.getName());
     // properties key names
     private static final String SWAP_SCRIPTS = "swapscripts";
@@ -61,9 +62,7 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
     private static final String UNIFY_SCRIPTS = "unifyscripts";
 
     public ScriptNormalizer() {
-        declareProperty(SWAP_SCRIPTS);
-        declareProperty(SPLIT_SCRIPTS_ELEMENTS);
-        declareProperty(UNIFY_SCRIPTS);
+        loadProperties(PROPERTIES_FILENAME);
     }
 
     @Override
@@ -73,7 +72,7 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
         }
         final Element root = doc.getRootElement();
         if (isEnabled(UNIFY_SCRIPTS)) {
-            final Map<String, String> replaceMap = new HashMap<>();
+            final Map<String, String> replaceMap = new HashMap<String, String>();
             replaceMap.put(UNDERSCRIPT, SUBSCRIPT);
             replaceMap.put(OVERSCRIPT, SUPERSCRIPT);
             replaceMap.put(UNDEROVER, SUBSUP);
@@ -87,7 +86,7 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
         }
         Collection<String> chosenElements = getPropertySet(SPLIT_SCRIPTS_ELEMENTS);
         if (chosenElements.isEmpty()) {
-            LOGGER.finer("Msubsup conversion is switched off");
+            LOGGER.fine("Msubsup conversion is switched off");
         } else {
             normalizeMsubsup(root, chosenElements);
         }
@@ -105,7 +104,7 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
             }
             List<Element> subscriptChildren = actual.getChildren();
             if (subscriptChildren.size() != 2) {
-                LOGGER.fine("Invalid msub, skipped");
+                LOGGER.info("Invalid msub, skipped");
                 continue;
             }
             if (!subscriptChildren.get(0).getName().equals(SUPERSCRIPT)) {
@@ -113,17 +112,17 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
             }
             final List<Element> superscriptChildren = subscriptChildren.get(0).getChildren();
             if (superscriptChildren.size() != 2) {
-                LOGGER.fine("Invalid msup, skipped");
+                LOGGER.info("Invalid msup, skipped");
                 continue;
             }
-            final Element newMsub = new Element(SUBSCRIPT, MATHMLNS);
+            final Element newMsub = new Element(SUBSCRIPT);
             newMsub.addContent(superscriptChildren.get(0).detach());
             newMsub.addContent(subscriptChildren.get(1).detach());
-            final Element newMsup = new Element(SUPERSCRIPT, MATHMLNS);
+            final Element newMsup = new Element(SUPERSCRIPT);
             newMsup.addContent(newMsub);
             newMsup.addContent(superscriptChildren.get(0).detach());
             children.set(i, newMsup);
-            LOGGER.finer("Sub/sup scripts swapped");
+            LOGGER.fine("Sub/sup scripts swapped");
         }
     }
 
@@ -135,21 +134,21 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
             if (actual.getName().equals(SUBSUP)) {
                 final List<Element> actualChildren = actual.getChildren();
                 if (actualChildren.size() != 3) {
-                    LOGGER.fine("Invalid msubsup, skipped");
+                    LOGGER.info("Invalid msubsup, skipped");
                     continue;
                 }
                 if (!firstChildren.contains(actualChildren.get(0).getName())) {
                     continue;
                 }
-                final Element newMsub = new Element(SUBSCRIPT, MATHMLNS);
+                final Element newMsub = new Element(SUBSCRIPT);
                 newMsub.addContent(actualChildren.get(0).detach());
                 newMsub.addContent(actualChildren.get(0).detach());
-                final Element newMsup = new Element(SUPERSCRIPT, MATHMLNS);
+                final Element newMsup = new Element(SUPERSCRIPT);
                 newMsup.addContent(newMsub);
                 newMsup.addContent(actualChildren.get(0).detach());
                 children.set(i, newMsup);
                 i--; // move back to check the children of the new transformation
-                LOGGER.finer("Msubsup converted to nested msub and msup");
+                LOGGER.fine("Msubsup converted to nested msub and msup");
             } else {
                 normalizeMsubsup(actual, firstChildren);
             }
@@ -158,7 +157,7 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
 
     private void replaceDescendants(final Element ancestor, final Map<String, String> map) {
         assert ancestor != null && map != null;
-        final List<Element> toReplace = new ArrayList<>();
+        final List<Element> toReplace = new ArrayList<Element>();
         for (Element element : ancestor.getDescendants(new ElementFilter())) {
             if (map.containsKey(element.getName())) {
                 toReplace.add(element);
@@ -168,5 +167,4 @@ public class ScriptNormalizer extends AbstractModule implements DOMModule {
             replaceElement(element, map.get(element.getName()));
         }
     }
-
 }

@@ -15,7 +15,6 @@
  */
 package cz.muni.fi.mir.mathmlcanonicalization.modules;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -27,17 +26,6 @@ public class OperatorNormalizerTest extends AbstractModuleTest {
 
     private static final Module DEFAULT_INSTANCE = new OperatorNormalizer();
     private static final String RESOURCE_SUBDIR = OperatorNormalizerTest.class.getSimpleName() + "/";
-
-    @BeforeClass
-    public static void setUpBeforeClass() {
-        DEFAULT_INSTANCE.setProperty("removeempty", "true");
-        DEFAULT_INSTANCE.setProperty("removeoperators", "\u2062 \u22c5 * \u2063 \u2064");
-        DEFAULT_INSTANCE.setProperty("replaceoperators", "+-:\u00b1 -+:\u00b1 \u00ad:-");
-        DEFAULT_INSTANCE.setProperty("colonreplacement", "/");
-        DEFAULT_INSTANCE.setProperty("normalizationform", "NFKD");
-        DEFAULT_INSTANCE.setProperty("operators", "+ - < > ( ) [ ] { } ^ ~ '");
-        DEFAULT_INSTANCE.setProperty("identifiers", "sin cos log tan");
-    }
 
     @Test
     public void testMultiplicationCdot() {
@@ -64,10 +52,4 @@ public class OperatorNormalizerTest extends AbstractModuleTest {
     public void testIdentifierReplacing() {
         testXML(DEFAULT_INSTANCE, RESOURCE_SUBDIR + "identifier-replacement");
     }
-
-    @Test
-    public void testOperators2identifiers() {
-        testXML(DEFAULT_INSTANCE, RESOURCE_SUBDIR + "operator2identifier");
-    }
-
 }

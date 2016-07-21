@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<math xmlns="http://www.w3.org/1998/Math/MathML">
-    <mi>x</mi>
-    <mo>+</mo>
+<math>
     <mrow>
-        <mo>(</mo>
+        <mi>x</mi>
+        <mo>+</mo>
         <mrow>
-            <mi>y</mi>
-            <mo>+</mo>
-            <mi>z</mi>
+            <mo>(</mo>
+            <mrow>
+                <mi>y</mi>
+                <mo>+</mo>
+                <mi>z</mi>
+            </mrow>
+            <mo>)</mo>
         </mrow>
-        <mo>)</mo>
     </mrow>
 </math>

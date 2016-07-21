@@ -17,7 +17,7 @@
 
     <modules>
         <module>mathml-canonicalizer</module>
-        <module>mathml-unificator</module>
+        <!--module>mathml-unificator</module-->
         <module>miasmath</module>
         <module>mias</module>
         <module>webmias</module>

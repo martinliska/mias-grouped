@@ -5,16 +5,17 @@
 
 package cz.muni.fi.mias.indexing.doc;
 
+import cz.muni.fi.mias.Settings;
 import cz.muni.fi.mias.MIaSUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -28,7 +29,7 @@ import org.xml.sax.SAXException;
  * @author Martin Liska
  */
 public class HtmlDocumentExtractor {
-    private static final Logger LOG = LogManager.getLogger(HtmlDocumentExtractor.class);
+
     private Element rawDoc;
 
     public HtmlDocumentExtractor(InputStream is) {
@@ -39,7 +40,7 @@ public class HtmlDocumentExtractor {
         try {
             parseDoc(new FileInputStream(file));
         } catch (FileNotFoundException ex) {
-            LOG.fatal(ex);
+            Logger.getLogger(HtmlDocumentExtractor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
         
@@ -48,8 +49,12 @@ public class HtmlDocumentExtractor {
             DocumentBuilder prepareDocumentBuilder = MIaSUtils.prepareDocumentBuilder();
             org.w3c.dom.Document root = prepareDocumentBuilder.parse(is);
             rawDoc = root.getDocumentElement();
-        } catch (SAXException | IOException | ParserConfigurationException ex) {
-            LOG.fatal(ex);
+        } catch (SAXException ex) {
+            Logger.getLogger(HtmlDocumentExtractor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(HtmlDocumentExtractor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(HtmlDocumentExtractor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -86,8 +91,10 @@ public class HtmlDocumentExtractor {
         Node firstChild = titleElement.getFirstChild();
         if (firstChild != null) {
             if (firstChild instanceof Text) {
-                Text text = (Text) firstChild;                
-                result = text.getData();
+                Text text = (Text) firstChild;
+                if (text != null) {
+                    result = text.getData();
+                }
             } else {
                 result = firstChild.getTextContent();
             }

@@ -69,9 +69,4 @@ public class ZipEntryDocument implements DocumentSource {
         doc.add(new StringField("archivepath", zipEntry.getName(), Field.Store.YES));
         return doc;
     }
-
-    @Override
-    public String getDocumentSourcePath() {
-        return path + "#" +zipEntry.getName();
-    }
 }

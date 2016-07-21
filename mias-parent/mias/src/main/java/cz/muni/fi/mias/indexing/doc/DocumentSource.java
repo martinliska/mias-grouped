@@ -15,7 +15,5 @@ public interface DocumentSource {
     public InputStream resetStream() throws IOException;
     
     public Document createDocument();
-
-    public String getDocumentSourcePath();
         
 }

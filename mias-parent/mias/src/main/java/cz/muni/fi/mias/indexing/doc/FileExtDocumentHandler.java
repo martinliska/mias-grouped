@@ -1,15 +1,13 @@
 package cz.muni.fi.mias.indexing.doc;
 
+import cz.muni.fi.mias.Settings;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.document.Document;
 
 /**
@@ -18,13 +16,10 @@ import org.apache.lucene.document.Document;
  *
  * @author Martin Liska
  */
-public class FileExtDocumentHandler implements Callable {
-
-    private static final Logger LOG = LogManager.getLogger(FileExtDocumentHandler.class);
+public class FileExtDocumentHandler implements Callable {    
     
     private File file;
     private String path;
-    private MIasDocumentFactory mIasDocumentFactory = new MIasDocumentFactory();
 
     public FileExtDocumentHandler(File file, String path) {
         this.file = file;
@@ -37,17 +32,17 @@ public class FileExtDocumentHandler implements Callable {
      * @param file Input file to be handled.
      * @return List<Lucene> of documents for the input files
      */
-    public List<Document> getDocuments(File file, String path) {
+    public static List<Document> getDocuments(File file, String path) {
         String ext = path.substring(path.lastIndexOf(".") + 1);
-        List<Document> result = new ArrayList<>();
-        List<MIaSDocument> miasDocuments = new ArrayList<>();
+        List<Document> result = new ArrayList<Document>();
+        List<MIaSDocument> miasDocuments = new ArrayList<MIaSDocument>();
         try {
             ZipFile zipFile;
             if (ext.equals("zip")) {
                 zipFile = new ZipFile(file);
-                Enumeration<? extends ZipEntry> e = zipFile.entries();
+                Enumeration e = zipFile.entries();
                 while (e.hasMoreElements()) {
-                    ZipEntry entry = e.nextElement();
+                    ZipEntry entry = (ZipEntry) e.nextElement();
                     if (!entry.isDirectory()) {
                         String name = entry.getName();
                         int extEnd = name.lastIndexOf("#");
@@ -55,7 +50,7 @@ public class FileExtDocumentHandler implements Callable {
                             extEnd = name.length();
                         }
                         ext = name.substring(name.lastIndexOf(".") + 1, extEnd);
-                        MIaSDocument miasDocument = mIasDocumentFactory.buildDocument(ext, new ZipEntryDocument(zipFile, path, entry));
+                        MIaSDocument miasDocument = handleExtension(ext, new ZipEntryDocument(zipFile, path, entry));
                         if (miasDocument != null) {
                             miasDocuments.add(miasDocument);
                         }
@@ -63,7 +58,7 @@ public class FileExtDocumentHandler implements Callable {
                 }
             } else {
                 DocumentSource source = new FileDocument(file, path);
-                MIaSDocument miasDocument = mIasDocumentFactory.buildDocument(ext, source);
+                MIaSDocument miasDocument = handleExtension(ext, source);
                 if (miasDocument!=null) {
                     miasDocuments.add(miasDocument);
                 }
@@ -71,12 +66,21 @@ public class FileExtDocumentHandler implements Callable {
             for (MIaSDocument doc : miasDocuments) {
                 result.addAll(doc.getDocuments());
             }
-        } catch (IOException ex) {
-            LOG.error("Cannot handle file {}", file.getAbsolutePath());
-            LOG.error(ex);
+        } catch (Exception e) {
+            System.out.println("Cannot handle file " + file.getAbsolutePath());
+            e.printStackTrace();
         }
-        
         return result;
+    }
+    
+    private static MIaSDocument handleExtension(String ext, DocumentSource source) {
+        MIaSDocument miasDocument = null;
+        if (Settings.getIndexFormulaeDocuments()) {
+            miasDocument = new FormulaDocument(source);
+        } else if (ext.equals("html") || ext.equals("xhtml")) {// || ext.equals("xml")) {
+            miasDocument = new HtmlDocument(source);
+        }
+        return miasDocument;
     }
 
     public List<Document> call() {

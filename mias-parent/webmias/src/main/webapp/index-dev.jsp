@@ -8,10 +8,9 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <title>Web Math Indexer and Searcher</title>
         <link type="text/css" rel="stylesheet" href="style.css" />
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"/>
-        <script type="text/javascript" src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"/>
-        <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" />
+        <script type="text/javascript" src="jquery-1.8.3.min.js"/>
         <script type="text/javascript" src="webmias.js"/>
+        <script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=MML_HTMLorMML" />
     </head> 
     <body>
         <div>
@@ -23,7 +22,7 @@
             </div>
             <div id="main-container">
                 <a id="logo" href="ps?n=-1"></a>
-                <form action="${pageContext.request.contextPath}/ps" method="post"
+                <form action="${pageContext.request.contextPath}/ps" method="get"
                       onsubmit="return checkForm(this)">
                     <div>
                         <textarea id="mathQuery" name="query" rows="8" class="full-width"><c:out value="${query}"/></textarea>

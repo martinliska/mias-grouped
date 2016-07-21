@@ -6,7 +6,7 @@
         <init-param>
             <description>query logging file</description>
             <param-name>querylog</param-name>
-            <param-value>../logs/webmias-querylog.txt</param-value>
+            <param-value>D:\mato\eudml\projects\querylog.txt</param-value>
         </init-param>
         <load-on-startup>0</load-on-startup>
     </servlet>
@@ -53,6 +53,10 @@
     <servlet-mapping>
         <servlet-name>SuggestServlet</servlet-name>
         <url-pattern>/suggest</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>MtermsServlet</servlet-name>
+        <url-pattern>/mterms</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>WsServlet</servlet-name>

@@ -15,6 +15,8 @@
  */
 package cz.muni.fi.mir.mathmlcanonicalization.modules;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +26,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Element;
-import org.jdom2.Namespace;
 
 /**
  * Module implementation with property loading
@@ -35,7 +36,6 @@ abstract class AbstractModule implements Module {
 
     protected final Properties properties = new Properties();
     private static final Logger LOGGER = Logger.getLogger(AbstractModule.class.getName());
-    protected static final Namespace MATHMLNS = Namespace.getNamespace("http://www.w3.org/1998/Math/MathML");
     // MathML elements
     protected static final String FENCED = "mfenced";
     protected static final String IDENTIFIER = "mi";
@@ -80,10 +80,6 @@ abstract class AbstractModule implements Module {
         properties.setProperty(key, value);
     }
 
-    public void declareProperty(String key) {
-        properties.setProperty(key, "");
-    }
-
     @Override
     public Set<String> getPropertyNames() {
         return properties.stringPropertyNames();
@@ -103,9 +99,33 @@ abstract class AbstractModule implements Module {
                 + "' is not a valid boolean value of " + key);
     }
 
+    protected void loadProperties(String propertiesFilename) {
+        assert propertiesFilename != null && !propertiesFilename.isEmpty();
+        InputStream resourceAsStream = null;
+        try {
+            resourceAsStream = this.getClass().getResourceAsStream(propertiesFilename);
+            if (resourceAsStream == null) {
+                throw new IOException("cannot find the property file");
+            }
+            properties.load(resourceAsStream);
+            LOGGER.log(Level.FINE, "Module properties loaded succesfully from {0}",
+                    propertiesFilename);
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Cannot load " + propertiesFilename, ex);
+        } finally {
+            try {
+                if (resourceAsStream != null) {
+                    resourceAsStream.close();
+                }
+            } catch (IOException ex) {
+                LOGGER.log(Level.WARNING, "Cannot close property file stream", ex);
+            }
+        }
+    }
+
     protected Set<String> getPropertySet(final String property) {
         assert property != null && !property.isEmpty();
-        return new HashSet<>(Arrays.asList(getProperty(property).split(" ")));
+        return new HashSet<String>(Arrays.asList(getProperty(property).split(" ")));
     }
 
     protected boolean isOperator(final Element element, final String operator) {
@@ -122,12 +142,11 @@ abstract class AbstractModule implements Module {
         assert !replacementName.isEmpty();
         final Element parent = toReplace.getParentElement();
         assert parent != null;
-        final Element replacement = new Element(replacementName, toReplace.getNamespace());
+        final Element replacement = new Element(replacementName);
         replacement.addContent(toReplace.removeContent());
         final List<Attribute> attributes = toReplace.getAttributes();
-        while (attributes.size() > 0) {
-            Attribute currentAttribute = attributes.get(0);
-            replacement.setAttribute(currentAttribute.detach());
+        for (Attribute attribute : attributes) {
+            replacement.setAttribute(attribute.detach());
         }
         final int parentIndex = parent.indexOf(toReplace);
         parent.removeContent(parentIndex);
@@ -135,5 +154,4 @@ abstract class AbstractModule implements Module {
         LOGGER.log(Level.FINE, "{0} replaced with {1}",
                 new Object[]{toReplace, replacementName});
     }
-
 }

@@ -26,13 +26,12 @@ import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.Spans;
 
 /**
- * Extracts fragments around the query match and highlights it. Two most
- * significant math hits and two textual matches are highlighted.
- *
+ * Extracts fragments around the query match and highlights it. Two most significant math hits and two textual matches are highlighted.
+ * 
  * @author Martin Liska
  */
 public class NiceSnippetExtractor implements SnippetExtractor {
-
+    
     private Query query;
     private int docNumber;
     private IndexReader indexReader;
@@ -44,7 +43,7 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         this.docNumber = docNumber;
         this.indexReader = indexReader;
     }
-
+    
     @Override
     public String getSnippet() {
         try {
@@ -54,7 +53,7 @@ public class NiceSnippetExtractor implements SnippetExtractor {
             List<Span> formSpans = new ArrayList<Span>();
             for (Query q : stqs) {
                 for (AtomicReaderContext context : indexReader.leaves()) {
-                    Spans spans = ((SpanTermQuery) q).getSpans(context, null, new HashMap());
+                    Spans spans = ((SpanTermQuery) q).getSpans(context, null, new HashMap());                    
                     spans.skipTo(docNumber - context.docBase - 1);
                     boolean cont = true;
                     boolean contextFound = false;
@@ -83,7 +82,7 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         }
         return "";
     }
-
+            
     private void getSpanTermQueries(Query query, List<Query> spanTermQueries, List<Query> nonSpamTermQueries) throws IOException {
         Query q = query.rewrite(indexReader);
         if (q instanceof SpanTermQuery) {
@@ -99,8 +98,8 @@ public class NiceSnippetExtractor implements SnippetExtractor {
                 nonSpamTermQueries.add(q);
             }
         }
-    }
-
+    }    
+    
     private String getSnippet(List<Span> spans, List<Query> nstqs) throws FileNotFoundException, IOException {
         String content = MIaSUtils.getContent(inputStream);
 
@@ -232,7 +231,7 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         }
         return result;
     }
-
+    
     private boolean isUniqueShippet(Snippet snippet, List<Snippet> result) {
         boolean unique = true;
         for (Snippet s : result) {
@@ -249,12 +248,7 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         int end = snippet.getEnd();
         int preStart = Math.max(content.lastIndexOf("." + Settings.eol, start) + Settings.eol.length() + 1, Math.max(content.lastIndexOf(". ", start) + 2, content.lastIndexOf(">", start) + 1));
         preStart = preStart < 0 ? 0 : preStart;
-        String pre = "";
-        try {
-            pre = content.substring(preStart, start);
-        } catch (Exception ex) {
-            Logger.getLogger(NiceSnippetExtractor.class.getName()).log(Level.SEVERE, "Snippet pre contents extraction failed.", ex);
-        }
+        String pre = content.substring(preStart, start);
         if (pre.isEmpty() || !Character.isUpperCase(pre.charAt(0))) {
             pre = "... " + pre;
         }
@@ -263,12 +257,7 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         int postEndWithEol = content.indexOf("." + Settings.eol, start) + 1;
         int postEnd = Math.min(postEndWithEol == 0 ? Integer.MAX_VALUE : postEndWithEol, Math.min(content.indexOf(". ", end) + 1, content.indexOf("<", end)));
         postEnd = postEnd <= 0 ? end : postEnd;
-        String post = "";
-        try {
-            post = content.substring(end, postEnd);
-        } catch (Exception ex) {
-            Logger.getLogger(NiceSnippetExtractor.class.getName()).log(Level.SEVERE, "Snippet post contents extraction failed.", ex);
-        }
+        String post = content.substring(end, postEnd);
         if (post.isEmpty() || (post.charAt(post.length() - 1)) != '.') {
             post += " ...";
         }
@@ -281,7 +270,8 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         int tagstart2 = content.lastIndexOf("<", start);
         return tagstart1 < tagstart2;
     }
-
+    
+    
     public class Snippet {
 
         private int start;
@@ -320,8 +310,8 @@ public class NiceSnippetExtractor implements SnippetExtractor {
         public void setText(String text) {
             this.text = text;
         }
-    }
-
+    }    
+    
     public class Span implements Serializable, Comparable {
 
         private int doc;
@@ -383,5 +373,5 @@ public class NiceSnippetExtractor implements SnippetExtractor {
             return f1 == f2 ? 0 : f1 - f2 > 0 ? -1 : 1;
         }
     }
-
+    
 }
