@@ -25,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author mato
  */
-@WebServlet(name = "MtermServlet", urlPatterns = {"/mterms"})
 public class MtermServlet extends HttpServlet {
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
