@@ -28,15 +28,15 @@ public class TitlesSuggester implements Suggester {
     private AnalyzingSuggester suggester;
 
     public TitlesSuggester(IndexReader reader) {
-//        try {
+        try {
             this.reader = reader;
             suggester = new AnalyzingSuggester(new StandardAnalyzer(Version.LUCENE_45));
-//            suggester.setPreservePositionIncrements(false);
+            suggester.setPreservePositionIncrements(false);
 //            suggester.build(new TitleListIterator(getTitles()));
-//            suggester.build(new LuceneDictionary(reader, "title"));
-//        } catch (IOException ex) {
-//            Logger.getLogger(TitlesSuggester.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+            suggester.build(new LuceneDictionary(reader, "title"));
+        } catch (IOException ex) {
+            Logger.getLogger(TitlesSuggester.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     private List<String> getTitles() throws IOException {

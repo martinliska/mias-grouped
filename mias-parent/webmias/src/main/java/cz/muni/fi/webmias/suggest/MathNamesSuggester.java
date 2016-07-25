@@ -26,13 +26,13 @@ public class MathNamesSuggester implements Suggester {
     private AnalyzingSuggester suggester;
 
     public MathNamesSuggester() {
-//        try {
-//            suggester = new AnalyzingSuggester(new StandardAnalyzer(Version.LUCENE_45));
-//            suggester.setPreservePositionIncrements(false);
-//            suggester.build(new TermsListIterator(getMathNames()));
-//        } catch (IOException ex) {
-//            Logger.getLogger(MathNamesSuggester.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        try {
+            suggester = new AnalyzingSuggester(new StandardAnalyzer(Version.LUCENE_45));
+            suggester.setPreservePositionIncrements(false);
+            suggester.build(new TermsListIterator(getMathNames()));
+        } catch (IOException ex) {
+            Logger.getLogger(MathNamesSuggester.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     private List<String> getMathNames() {
