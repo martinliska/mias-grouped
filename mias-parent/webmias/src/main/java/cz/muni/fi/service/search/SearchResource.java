@@ -51,6 +51,11 @@ public class SearchResource {
             @QueryParam(value = "index") int indexNo,
             @QueryParam(value = "extractSubformulae") boolean extractSubformulae,
             @QueryParam(value = "reduceWeighting") boolean reduceWeighting) {
+
+        // FIXME force extraction of subformulae with unreduced weighting
+        extractSubformulae = true;
+        reduceWeighting = false;
+
         if (limit > LIMIT || limit <= 0) {
             limit = LIMIT;
         }
