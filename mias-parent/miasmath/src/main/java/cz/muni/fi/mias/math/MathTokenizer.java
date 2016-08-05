@@ -159,7 +159,9 @@ public class MathTokenizer extends Tokenizer {
      * @param type type of MathML that should be processed
      */
     public MathTokenizer(Reader input, boolean subformulae, MathMLType type) {
-        this(input, subformulae, type, subformulae);
+        // FIXME for indexing disable extraction of subformulae
+        // this(input, subformulae, type, subformulae);
+        this(input, false, type, subformulae);
     }
 
     /**
